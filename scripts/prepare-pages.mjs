@@ -17,5 +17,5 @@ const publishedAssets = withinRoot("assets");
 await writeFile(publishedHtml, await readFile(builtHtml));
 await rm(publishedAssets, { recursive: true, force: true });
 await mkdir(publishedAssets, { recursive: true });
-await cp(builtAssets, publishedAssets, { recursive: true });
+await cp(builtAssets, publishedAssets, { recursive: true, filter: (source) => !source.endsWith(".map") });
 console.log("GitHub Pages files ready in the repository root.");

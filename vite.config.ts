@@ -3,7 +3,7 @@ import legacy from "@vitejs/plugin-legacy";
 
 export default defineConfig({
   base: "./",
-  build: { rollupOptions: { input: "dev.html" } },
+  build: { sourcemap: "hidden", rollupOptions: { input: "dev.html" } },
   plugins: [legacy({ targets: ["defaults", "ChromeAndroid >= 70", "not IE 11"] }), {
     name: "local-dev-entry",
     configureServer(server) {

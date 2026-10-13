@@ -16,7 +16,9 @@
         if (event.target && event.target !== window && (event.target.src || event.target.href)) {
           window.__gameBootError = "Не загрузился файл игры: " + (event.target.src || event.target.href);
         } else if (event.message) {
-          window.__gameBootError = "Ошибка JavaScript: " + event.message;
+          var location = event.filename ? "\n" + event.filename + ":" + event.lineno + ":" + event.colno : "";
+          var stack = event.error && event.error.stack ? "\n" + String(event.error.stack).split("\n").slice(0, 4).join("\n") : "";
+          window.__gameBootError = "Ошибка JavaScript: " + event.message + location + stack;
         }
       }, true);
       window.addEventListener("unhandledrejection", function (event) {
@@ -34,7 +36,7 @@
     <script type="module">!function(){if(window.__vite_is_modern_browser)return;console.warn("vite: loading legacy chunks, syntax error above and the same error below should be ignored");var e=document.getElementById("vite-legacy-polyfill"),n=document.createElement("script");n.src=e.src,n.onload=function(){System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))},document.body.appendChild(n)}();</script>
   </head>
   <body>
-    <div id="app"><div style="min-height:100vh;padding:24px;background:#171424;color:#fff7ec;font:700 16px Arial,sans-serif"><p>Загрузка игры…</p><p id="boot-detail" style="max-width:620px;font-size:14px;line-height:1.5;color:#ffbb93"></p><noscript>В этом браузере выключен JavaScript. Разрешите его для github.io, чтобы открыть игру.</noscript></div></div>
+    <div id="app"><div style="min-height:100vh;padding:24px;background:#171424;color:#fff7ec;font:700 16px Arial,sans-serif"><p>Загрузка игры…</p><p id="boot-detail" style="max-width:620px;font-size:13px;line-height:1.5;color:#ffbb93;white-space:pre-wrap;overflow-wrap:anywhere"></p><noscript>В этом браузере выключен JavaScript. Разрешите его для github.io, чтобы открыть игру.</noscript></div></div>
     <script nomodule>!function(){var e=document,t=e.createElement("script");if(!("noModule"in t)&&"onbeforeload"in t){var n=!1;e.addEventListener("beforeload",(function(e){if(e.target===t)n=!0;else if(!e.target.hasAttribute("nomodule")||!n)return;e.preventDefault()}),!0),t.type="module",t.src=".",e.head.appendChild(t),t.remove()}}();</script>
     <script nomodule crossorigin id="vite-legacy-polyfill" src="./assets/polyfills-legacy-DY8pW-uQ.js"></script>
     <script nomodule crossorigin id="vite-legacy-entry" data-src="./assets/dev-legacy-DeHulZtb.js">System.import(document.getElementById('vite-legacy-entry').getAttribute('data-src'))</script>

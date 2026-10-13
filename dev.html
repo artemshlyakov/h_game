@@ -16,7 +16,9 @@
         if (event.target && event.target !== window && (event.target.src || event.target.href)) {
           window.__gameBootError = "Не загрузился файл игры: " + (event.target.src || event.target.href);
         } else if (event.message) {
-          window.__gameBootError = "Ошибка JavaScript: " + event.message;
+          var location = event.filename ? "\n" + event.filename + ":" + event.lineno + ":" + event.colno : "";
+          var stack = event.error && event.error.stack ? "\n" + String(event.error.stack).split("\n").slice(0, 4).join("\n") : "";
+          window.__gameBootError = "Ошибка JavaScript: " + event.message + location + stack;
         }
       }, true);
       window.addEventListener("unhandledrejection", function (event) {
@@ -31,6 +33,6 @@
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <div id="app"><div style="min-height:100vh;padding:24px;background:#171424;color:#fff7ec;font:700 16px Arial,sans-serif"><p>Загрузка игры…</p><p id="boot-detail" style="max-width:620px;font-size:14px;line-height:1.5;color:#ffbb93"></p><noscript>В этом браузере выключен JavaScript. Разрешите его для github.io, чтобы открыть игру.</noscript></div></div>
+    <div id="app"><div style="min-height:100vh;padding:24px;background:#171424;color:#fff7ec;font:700 16px Arial,sans-serif"><p>Загрузка игры…</p><p id="boot-detail" style="max-width:620px;font-size:13px;line-height:1.5;color:#ffbb93;white-space:pre-wrap;overflow-wrap:anywhere"></p><noscript>В этом браузере выключен JavaScript. Разрешите его для github.io, чтобы открыть игру.</noscript></div></div>
   </body>
 </html>
