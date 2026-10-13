@@ -4,15 +4,14 @@ type Kind = "pumpkin" | "candy" | "golden" | "skull" | "ghost";
 type Falling = { kind: Kind; sprite: Phaser.GameObjects.Image; x: number; y: number; speed: number; age: number; sway: number; phase: number; rotation: number };
 export type GameSummary = { score: number; lives: number };
 type Hud = { score: number; time: number; lives: number; combo: number };
-type Callbacks = { onHud: (hud: Hud) => void; onFinish: (summary: GameSummary) => void; onToast: (message: string) => void; onSound: (frequency: number, duration?: number, waveform?: OscillatorType) => void };
+type Callbacks = { onHud: (hud: Hud) => void; onFinish: (summary: GameSummary) => void; onToast: (message: string) => void; onSound: (frequency: number, duration?: number, waveform?: OscillatorType) => void; onCatch: () => void };
 
-const HEIGHT = 600;
 const ROUND_SECONDS = 60;
-const GROUND = 535;
 
 export class CatchScene extends Phaser.Scene {
   private callbacks: Callbacks;
   private worldWidth: number;
+  private worldHeight: number;
   private witch?: Phaser.GameObjects.Image;
   private keys?: Record<"left" | "right" | "a" | "d", Phaser.Input.Keyboard.Key>;
   private falling: Falling[] = [];
@@ -29,16 +28,17 @@ export class CatchScene extends Phaser.Scene {
   private ready = false;
   private lastShownTime = ROUND_SECONDS;
 
-  constructor(callbacks: Callbacks, worldWidth = 960) {
+  constructor(callbacks: Callbacks, worldWidth = 960, worldHeight = 600) {
     super({ key: "CatchScene" });
     this.callbacks = callbacks;
     this.worldWidth = worldWidth;
+    this.worldHeight = worldHeight;
     this.targetX = worldWidth / 2;
   }
 
   preload() {
     const base = `${import.meta.env.BASE_URL}assets/`;
-    this.load.svg("background", `${base}scene.svg`, { width: 960, height: HEIGHT });
+    this.load.svg("background", `${base}${this.worldHeight > 600 ? "scene-mobile" : "scene"}.svg`, { width: this.worldWidth, height: this.worldHeight });
     this.load.svg("witch", `${base}witch.svg`, { width: 240, height: 280 });
     for (const kind of ["pumpkin", "candy", "golden", "skull", "ghost"] as const) {
       this.load.svg(kind, `${base}${kind}.svg`, { width: 96, height: 96 });
@@ -46,9 +46,9 @@ export class CatchScene extends Phaser.Scene {
   }
 
   create() {
-    this.add.image(this.worldWidth / 2, HEIGHT / 2, "background").setDisplaySize(960, HEIGHT);
-    this.add.ellipse(this.worldWidth / 2, GROUND + 26, 440, 35, 0x0e1525, 0.45);
-    this.witch = this.add.image(this.worldWidth / 2, 570, "witch").setOrigin(0.5, 1).setDisplaySize(154, 180).setDepth(5);
+    this.add.image(this.worldWidth / 2, this.worldHeight / 2, "background").setDisplaySize(this.worldWidth, this.worldHeight);
+    this.add.ellipse(this.worldWidth / 2, this.worldHeight - 39, 440, 35, 0x0e1525, 0.45);
+    this.witch = this.add.image(this.worldWidth / 2, this.worldHeight - 30, "witch").setOrigin(0.5, 1).setDisplaySize(154, 180).setDepth(5);
     this.keys = this.input.keyboard?.addKeys({ left: Phaser.Input.Keyboard.KeyCodes.LEFT, right: Phaser.Input.Keyboard.KeyCodes.RIGHT, a: Phaser.Input.Keyboard.KeyCodes.A, d: Phaser.Input.Keyboard.KeyCodes.D }) as typeof this.keys;
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       if (this.running) this.targetX = Phaser.Math.Clamp(pointer.x, 72, this.worldWidth - 72);
@@ -68,7 +68,7 @@ export class CatchScene extends Phaser.Scene {
     this.remaining = ROUND_SECONDS; this.lastShownTime = ROUND_SECONDS;
     this.elapsed = 0; this.spawnIn = 0.75; this.nextGolden = 10;
     this.targetX = this.worldWidth / 2; this.invulnerableUntil = 0;
-    this.witch.setPosition(this.worldWidth / 2, 570).setAlpha(1).setDisplaySize(154, 180);
+    this.witch.setPosition(this.worldWidth / 2, this.worldHeight - 30).setAlpha(1).setDisplaySize(154, 180);
     this.running = true;
     this.callbacks.onHud({ score: 0, time: ROUND_SECONDS, lives: 3, combo: 0 });
     this.callbacks.onSound(590, 0.13);
@@ -105,11 +105,11 @@ export class CatchScene extends Phaser.Scene {
       item.y += item.speed * dt;
       const displayX = item.x + Math.sin(item.age * 2.6 + item.phase) * item.sway;
       item.sprite.setPosition(displayX, item.y).setRotation(Math.sin(item.age * 2 + item.phase) * item.rotation);
-      const caught = item.y >= 459 && item.y <= 523 && Math.abs(displayX - this.witch.x) < 62;
+      const caught = item.y >= this.worldHeight - 141 && item.y <= this.worldHeight - 77 && Math.abs(displayX - this.witch.x) < 62;
       if (caught) {
         this.collect(item, displayX);
         this.falling.splice(i, 1);
-      } else if (item.y > HEIGHT + 45) {
+      } else if (item.y > this.worldHeight + 45) {
         if (item.kind === "pumpkin" || item.kind === "candy" || item.kind === "golden") this.combo = 0;
         this.removeItem(item);
         this.falling.splice(i, 1);
@@ -127,7 +127,7 @@ export class CatchScene extends Phaser.Scene {
     const size = kind === "candy" ? 57 : kind === "ghost" ? 66 : 62;
     const sprite = this.add.image(x, -50, kind).setDisplaySize(size, size).setDepth(3);
     if (kind === "golden") this.tweens.add({ targets: sprite, alpha: 0.72, duration: 360, yoyo: true, repeat: -1, ease: "Sine.InOut" });
-    this.falling.push({ kind, sprite, x, y: -50, speed: 190 + this.elapsed * 2.45 + Math.random() * 35, age: 0, sway: 10 + Math.random() * 18, phase: Math.random() * Math.PI * 2, rotation: kind === "ghost" ? 0.08 : 0.22 });
+    this.falling.push({ kind, sprite, x, y: -50, speed: (this.worldHeight > 600 ? 290 : 190) + this.elapsed * 2.45 + Math.random() * 35, age: 0, sway: 10 + Math.random() * 18, phase: Math.random() * Math.PI * 2, rotation: kind === "ghost" ? 0.08 : 0.22 });
   }
 
   private collect(item: Falling, x: number) {
@@ -151,7 +151,7 @@ export class CatchScene extends Phaser.Scene {
       this.score += points;
       this.burst(x, item.y, item.kind === "golden" ? 0xffe18c : 0xffae75);
       this.floatText(`+${points}`, x, item.y, item.kind === "golden" ? "#ffe485" : "#fff0be");
-      this.callbacks.onSound(item.kind === "golden" ? 810 : 440 + Math.min(this.combo * 25, 300));
+      this.callbacks.onCatch();
       if (item.kind === "golden") this.callbacks.onToast("Золотая тыква! +50");
       else if (this.combo > 0 && this.combo % 5 === 0) this.callbacks.onToast(`Серия x${this.combo}! Бонус к очкам`);
     }

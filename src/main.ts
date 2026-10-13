@@ -5,6 +5,17 @@ import "./styles.css";
 type ScoreEntry = { name: string; score: number; date: number };
 const SCORE_KEY = "h-game-local-scores-v1";
 const NAME_KEY = "h-game-player-name-v1";
+const MOBILE = window.matchMedia("(max-width: 650px)").matches;
+const GAME_WIDTH = MOBILE ? 640 : 960;
+const GAME_HEIGHT = MOBILE ? 900 : 600;
+
+function storageGet(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function storageSet(key: string, value: string) {
+  try { localStorage.setItem(key, value); } catch { /* Private browser storage may be unavailable. */ }
+}
 
 const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) throw new Error("App root missing");
@@ -78,15 +89,30 @@ const ui = {
   sound: get<HTMLButtonElement>("#sound-button"),
 };
 
-ui.input.value = localStorage.getItem(NAME_KEY) ?? "";
+ui.input.value = storageGet(NAME_KEY) ?? "";
 let playerName = "";
 let soundEnabled = true;
 let audio: AudioContext | null = null;
+let catchBuffer: AudioBuffer | null = null;
 let toastTimer = 0;
+const catchBytes = fetch(`${import.meta.env.BASE_URL}assets/catch.wav`)
+  .then((response) => { if (!response.ok) throw new Error("Catch sound unavailable"); return response.arrayBuffer(); })
+  .catch(() => null);
+
+async function prepareCatchSound() {
+  try {
+    audio ??= new AudioContext();
+    await audio.resume();
+    if (!catchBuffer) {
+      const bytes = await catchBytes;
+      if (bytes) catchBuffer = await audio.decodeAudioData(bytes.slice(0));
+    }
+  } catch { /* Sound is optional. */ }
+}
 
 function readScores(): ScoreEntry[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(SCORE_KEY) || "[]");
+    const value: unknown = JSON.parse(storageGet(SCORE_KEY) || "[]");
     if (!Array.isArray(value)) return [];
     return value.filter((entry): entry is ScoreEntry => entry && typeof entry.name === "string" && Number.isFinite(entry.score) && Number.isFinite(entry.date));
   } catch { return []; }
@@ -113,7 +139,7 @@ function saveScore(score: number) {
   const current = scores.find((entry) => entry.name.toLocaleLowerCase("ru") === playerName.toLocaleLowerCase("ru"));
   if (current) { if (score > current.score) { current.score = score; current.date = Date.now(); } }
   else scores.push({ name: playerName, score, date: Date.now() });
-  localStorage.setItem(SCORE_KEY, JSON.stringify(scores.sort((a, b) => b.score - a.score).slice(0, 20)));
+  storageSet(SCORE_KEY, JSON.stringify(scores.sort((a, b) => b.score - a.score).slice(0, 20)));
   renderBoard();
 }
 
@@ -126,6 +152,18 @@ function playSound(frequency: number, duration = 0.09, waveform: OscillatorType 
     gain.gain.setValueAtTime(0.08, audio.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + duration);
     oscillator.connect(gain).connect(audio.destination); oscillator.start(); oscillator.stop(audio.currentTime + duration);
+  } catch { /* Sound is optional. */ }
+}
+
+function playCatchSound() {
+  if (!soundEnabled || !audio || !catchBuffer) return;
+  try {
+    const source = audio.createBufferSource();
+    const gain = audio.createGain();
+    source.buffer = catchBuffer;
+    gain.gain.value = 0.42;
+    source.connect(gain).connect(audio.destination);
+    source.start();
   } catch { /* Sound is optional. */ }
 }
 
@@ -144,7 +182,6 @@ function showEnd(summary: GameSummary) {
   ui.overlay.classList.remove("hidden");
 }
 
-const GAME_WIDTH = window.matchMedia("(max-width: 650px)").matches ? 640 : 960;
 const scene = new CatchScene({
   onHud: ({ score, time, lives }) => {
     ui.score.textContent = String(score).padStart(4, "0");
@@ -155,16 +192,17 @@ const scene = new CatchScene({
   onFinish: showEnd,
   onToast: showToast,
   onSound: playSound,
-}, GAME_WIDTH);
+  onCatch: playCatchSound,
+}, GAME_WIDTH, GAME_HEIGHT);
 
 new Phaser.Game({
-  type: Phaser.AUTO,
+  type: Phaser.CANVAS,
   parent: "game",
   width: GAME_WIDTH,
-  height: 600,
+  height: GAME_HEIGHT,
   backgroundColor: "#231936",
   render: { antialias: true, pixelArt: false },
-  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: GAME_WIDTH, height: 600 },
+  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: GAME_WIDTH, height: GAME_HEIGHT },
   scene: [scene],
 });
 
@@ -172,8 +210,12 @@ ui.play.addEventListener("click", () => {
   const name = ui.input.value.trim().replace(/\s+/g, " ");
   if (name.length < 2) { ui.error.textContent = "Введите имя минимум из 2 символов"; ui.input.focus(); return; }
   ui.error.textContent = "";
-  playerName = name; localStorage.setItem(NAME_KEY, name);
-  if (scene.startRound()) ui.overlay.classList.add("hidden");
+  playerName = name; storageSet(NAME_KEY, name);
+  void prepareCatchSound();
+  if (scene.startRound()) {
+    ui.overlay.classList.add("hidden");
+    if (MOBILE) get<HTMLElement>(".game-shell").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   renderBoard();
 });
 
