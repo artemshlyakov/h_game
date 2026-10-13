@@ -14,7 +14,7 @@ app.innerHTML = `
   <div class="shell">
     <header class="topbar">
       <div class="brand"><span class="brand-mark">✦</span><span>BOO<span class="brand-accent">.</span>PLAY</span></div>
-      <div class="topbar-meta"><span class="prototype-tag">ЛОКАЛЬНЫЙ ПРОТОТИП</span><button class="icon-button" id="sound-button" type="button" aria-label="Выключить звук" title="Звук">♫</button></div>
+      <div class="topbar-meta"><span class="prototype-tag">ХЭЛЛОУИНСКАЯ ИГРА</span><button class="icon-button" id="sound-button" type="button" aria-label="Выключить звук" title="Звук">♫</button></div>
     </header>
 
     <main>
@@ -59,7 +59,7 @@ app.innerHTML = `
         </aside>
       </div>
     </main>
-    <footer><span>СОЗДАНО ДЛЯ ХЭЛЛОУИНСКОЙ НОЧИ ✦</span><span>ЛОКАЛЬНАЯ ВЕРСИЯ · БЕЗ ПУБЛИКАЦИИ</span></footer>
+    <footer><span>СОЗДАНО ДЛЯ ХЭЛЛОУИНСКОЙ НОЧИ ✦</span><span>ПОЙМАЙ СВОЙ РЕКОРД 🎃</span></footer>
   </div>`;
 
 function get<T extends Element>(selector: string): T {
