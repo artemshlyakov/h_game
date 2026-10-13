@@ -11,6 +11,10 @@ npm run dev
 
 Откройте адрес, который покажет Vite (обычно `http://127.0.0.1:5173`). Сборка: `npm run build`.
 
+## GitHub Pages
+
+При каждом изменении ветки `main` workflow `.github/workflows/pages.yml` собирает игру и публикует содержимое `dist`. Для первоначального включения откройте **Settings → Pages → Build and deployment → Source** и выберите **GitHub Actions**. Адрес игры: <https://artemshlyakov.github.io/h_game/>.
+
 ## Управление и правила
 
 - Мышь или палец: ведите ведьму влево и вправо.
