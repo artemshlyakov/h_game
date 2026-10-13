@@ -205,6 +205,7 @@ new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH, width: GAME_WIDTH, height: GAME_HEIGHT },
   scene: [scene],
 });
+(window as Window & { __gameBooted?: boolean }).__gameBooted = true;
 
 ui.play.addEventListener("click", () => {
   const name = ui.input.value.trim().replace(/\s+/g, " ");

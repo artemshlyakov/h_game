@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
+import legacy from "@vitejs/plugin-legacy";
 
 export default defineConfig({
   base: "./",
   build: { rollupOptions: { input: "dev.html" } },
-  plugins: [{
+  plugins: [legacy({ targets: ["defaults", "ChromeAndroid >= 70", "not IE 11"] }), {
     name: "local-dev-entry",
     configureServer(server) {
       server.middlewares.use((request, _response, next) => {

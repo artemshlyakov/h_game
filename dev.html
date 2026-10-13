@@ -10,9 +10,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Rubik:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+    <script>
+      window.__gameBootError = "";
+      window.addEventListener("error", function (event) {
+        if (event.target && event.target !== window && (event.target.src || event.target.href)) {
+          window.__gameBootError = "Не загрузился файл игры: " + (event.target.src || event.target.href);
+        } else if (event.message) {
+          window.__gameBootError = "Ошибка JavaScript: " + event.message;
+        }
+      }, true);
+      window.addEventListener("unhandledrejection", function (event) {
+        window.__gameBootError = "Ошибка запуска: " + String(event.reason && event.reason.message || event.reason);
+      });
+      window.setTimeout(function () {
+        if (window.__gameBooted) return;
+        var detail = document.getElementById("boot-detail");
+        if (detail) detail.textContent = window.__gameBootError || "Игра не запустилась. Проверьте, разрешён ли JavaScript в браузере, и обновите страницу.";
+      }, 8000);
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <div id="app"><p style="margin:0;min-height:100vh;padding:24px;background:#171424;color:#fff7ec;font:700 16px Arial,sans-serif">Загрузка игры… Если экран не меняется, обновите страницу.</p></div>
+    <div id="app"><div style="min-height:100vh;padding:24px;background:#171424;color:#fff7ec;font:700 16px Arial,sans-serif"><p>Загрузка игры…</p><p id="boot-detail" style="max-width:620px;font-size:14px;line-height:1.5;color:#ffbb93"></p><noscript>В этом браузере выключен JavaScript. Разрешите его для github.io, чтобы открыть игру.</noscript></div></div>
   </body>
 </html>
